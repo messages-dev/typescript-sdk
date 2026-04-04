@@ -2,8 +2,6 @@
 
 Official TypeScript SDK for [messages.dev](https://messages.dev). Send and receive iMessage and SMS over a simple REST API from Node.js, Bun, Deno, or the browser.
 
-**[→ Read the docs](https://docs.messages.dev)**
-
 ## Installation
 
 ```bash
@@ -14,7 +12,7 @@ npm install @messages-dev/sdk
 
 1. Sign up at [app.messages.dev](https://app.messages.dev).
 2. Go to **API Keys** and click **Create Key**. Copy the `sk_live_...` key, it's only shown once.
-3. Go to **Lines**, scan the sandbox QR code with your phone, and send the activation text. Your sandbox is now paired with your number and you have 50 free messages per day.
+3. Go to the **Overview** tab, scan the sandbox QR code with your phone, and send the activation text. Your sandbox is now paired with your number and you have 50 free messages per day.
 
 Full walkthrough: [docs.messages.dev/quickstart](https://docs.messages.dev/quickstart).
 
@@ -31,8 +29,6 @@ await client.sendMessage({
   text: "Hello from the iMessage API!",
 });
 ```
-
-The client reads `MESSAGES_API_KEY` from your environment automatically. To pass a key explicitly, use `createClient({ apiKey: "sk_live_..." })`.
 
 ## What you can do
 
@@ -69,15 +65,7 @@ for await (const message of messages) {
 
 ## Receiving messages
 
-Create a webhook subscription for the events you care about:
-
-```ts
-await client.createWebhook({
-  from: "+15551234567",
-  url: "https://your-app.com/webhooks",
-  events: ["message.received", "message.sent"],
-});
-```
+Create a webhook from the **Webhooks** tab in your [dashboard](https://app.messages.dev/webhooks). Enter your endpoint URL, select the events you want to subscribe to, and copy the signing secret.
 
 Verify incoming deliveries with `verifyWebhook`. Signatures use timing-safe HMAC-SHA256 and timestamps older than 5 minutes are rejected:
 
