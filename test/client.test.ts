@@ -41,7 +41,13 @@ test("listLines sends correct request", async () => {
     return new Response(
       JSON.stringify({
         data: [
-          { id: "ln_123", handle: "+15551234567", label: null, service: "imessage", is_active: true },
+          {
+            id: "ln_123",
+            handle: "+15551234567",
+            label: null,
+            service: "imessage",
+            is_active: true,
+          },
         ],
         has_more: false,
         next_cursor: null,
@@ -88,18 +94,19 @@ test("sendMessage sends correct request", async () => {
 });
 
 test("handles 401 authentication error", async () => {
-  mockFetch(() =>
-    new Response(
-      JSON.stringify({
-        error: {
-          type: "authentication_error",
-          code: "invalid_api_key",
-          message: "Invalid API key.",
-        },
-        request_id: "req_err",
-      }),
-      { status: 401 },
-    ),
+  mockFetch(
+    () =>
+      new Response(
+        JSON.stringify({
+          error: {
+            type: "authentication_error",
+            code: "invalid_api_key",
+            message: "Invalid API key.",
+          },
+          request_id: "req_err",
+        }),
+        { status: 401 },
+      ),
   );
 
   const client = createClient({ apiKey: "sk_live_bad" });
@@ -107,22 +114,25 @@ test("handles 401 authentication error", async () => {
 });
 
 test("handles 404 not found error", async () => {
-  mockFetch(() =>
-    new Response(
-      JSON.stringify({
-        error: {
-          type: "not_found_error",
-          code: "outbox_item_not_found",
-          message: "Outbox item not found.",
-        },
-        request_id: "req_err",
-      }),
-      { status: 404 },
-    ),
+  mockFetch(
+    () =>
+      new Response(
+        JSON.stringify({
+          error: {
+            type: "not_found_error",
+            code: "outbox_item_not_found",
+            message: "Outbox item not found.",
+          },
+          request_id: "req_err",
+        }),
+        { status: 404 },
+      ),
   );
 
   const client = createClient({ apiKey: "sk_live_test" });
-  await expect(client.getOutboxItem({ id: "obx_bad" })).rejects.toThrow(NotFoundError);
+  await expect(client.getOutboxItem({ id: "obx_bad" })).rejects.toThrow(
+    NotFoundError,
+  );
 });
 
 test("retries on 5xx", async () => {
@@ -191,7 +201,6 @@ test("sendReaction sends message_id in body", async () => {
     type: "love",
   });
 });
-
 
 test("uploadFile sends raw binary POST", async () => {
   mockFetch(async (req) => {
@@ -334,7 +343,13 @@ test("pagination with for await...of", async () => {
       return new Response(
         JSON.stringify({
           data: [
-            { id: "ln_1", handle: "+1", label: null, service: "imessage", is_active: true },
+            {
+              id: "ln_1",
+              handle: "+1",
+              label: null,
+              service: "imessage",
+              is_active: true,
+            },
           ],
           has_more: true,
           next_cursor: "cursor_1",
@@ -345,7 +360,13 @@ test("pagination with for await...of", async () => {
     return new Response(
       JSON.stringify({
         data: [
-          { id: "ln_2", handle: "+2", label: null, service: "imessage", is_active: true },
+          {
+            id: "ln_2",
+            handle: "+2",
+            label: null,
+            service: "imessage",
+            is_active: true,
+          },
         ],
         has_more: false,
         next_cursor: null,
@@ -372,7 +393,11 @@ test("startTyping sends correct request", async () => {
     expect(body.to).toBe("+15559876543");
     expect(body.state).toBeUndefined();
     return new Response(
-      JSON.stringify({ id: "obx_123", status: "pending", request_id: "req_abc" }),
+      JSON.stringify({
+        id: "obx_123",
+        status: "pending",
+        request_id: "req_abc",
+      }),
       { status: 201 },
     );
   });
@@ -386,7 +411,11 @@ test("stopTyping sends state off", async () => {
     const body = (await req.json()) as any;
     expect(body.state).toBe("off");
     return new Response(
-      JSON.stringify({ id: "obx_123", status: "pending", request_id: "req_abc" }),
+      JSON.stringify({
+        id: "obx_123",
+        status: "pending",
+        request_id: "req_abc",
+      }),
       { status: 201 },
     );
   });
