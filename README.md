@@ -14,8 +14,6 @@ npm install @messages-dev/sdk
 2. Go to **API Keys** and click **Create Key**. Copy the `sk_live_...` key, it's only shown once.
 3. Go to the **Overview** tab, scan the sandbox QR code with your phone, and send the activation text. Your sandbox is now paired with your number and you have 50 free messages per day.
 
-Full walkthrough: [docs.messages.dev/quickstart](https://docs.messages.dev/quickstart).
-
 ## Usage
 
 ```ts
