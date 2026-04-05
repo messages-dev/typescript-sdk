@@ -30,13 +30,19 @@ await client.sendMessage({
 
 ## What you can do
 
-Send iMessage and SMS, with attachments and reply threading:
+Send messages with attachments and reply threading:
 
 ```ts
-await client.sendMessage({ from, to, text, attachments: ["file_abc"], replyTo: "msg_xyz" });
+await client.sendMessage({
+  from,
+  to,
+  text,
+  attachments: ["file_abc"],
+  replyTo: "msg_xyz",
+});
 ```
 
-Reactions, typing indicators, and read receipts:
+Send reactions, typing indicators, and read receipts:
 
 ```ts
 await client.sendReaction({ from, to, messageId, type: "love" });
@@ -47,18 +53,19 @@ await client.sendReadReceipt({ from, to });
 Upload files and attach them to messages:
 
 ```ts
-const file = await client.uploadFile({ from, file: buffer, filename: "photo.jpg", mimeType: "image/jpeg" });
-await client.sendMessage({ from, to, text: "Look", attachments: [file.id] });
-```
+const file = await client.uploadFile({
+  from,
+  file: buffer,
+  filename: "photo.jpg",
+  mimeType: "image/jpeg",
+});
 
-List messages, chats, lines, and more with cursor pagination:
-
-```ts
-const messages = await client.listMessages({ from, to });
-
-for await (const message of messages) {
-  console.log(message.text);
-}
+await client.sendMessage({
+  from,
+  to,
+  text: "Look",
+  attachments: [file.id],
+});
 ```
 
 ## Receiving messages
