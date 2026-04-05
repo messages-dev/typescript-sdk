@@ -13,7 +13,7 @@ function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 export async function verifyWebhook(
-  body: string | Buffer,
+  body: string | Uint8Array,
   signature: string | null | undefined,
   secret: string,
   options?: { tolerance?: number },

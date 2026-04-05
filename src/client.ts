@@ -30,9 +30,10 @@ import type {
   CreateWebhookParams,
 } from "./types.js";
 
-
 export function createClient(config: ClientConfig = {}): MessagesClient {
-  const apiKey = config.apiKey ?? process.env.MESSAGES_API_KEY;
+  const envKey =
+    typeof process !== "undefined" ? process.env?.MESSAGES_API_KEY : undefined;
+  const apiKey = config.apiKey ?? envKey;
   if (!apiKey) {
     throw new Error(
       "Missing API key. Pass { apiKey } to createClient() or set the MESSAGES_API_KEY environment variable.",

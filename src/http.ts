@@ -10,7 +10,6 @@ export interface HttpClientConfig {
   maxRetries: number;
 }
 
-
 export class HttpClient {
   private config: HttpClientConfig;
 
@@ -104,7 +103,7 @@ export class HttpClient {
     path: string,
     opts: {
       query?: Record<string, string | number | undefined>;
-      body: Blob | Buffer | Uint8Array;
+      body: Blob | Uint8Array;
       headers?: Record<string, string>;
       schema?: S;
     },

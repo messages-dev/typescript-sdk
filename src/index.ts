@@ -1,10 +1,7 @@
-// Client
 export { createClient } from "./client.js";
 
-// Webhook verification
 export { verifyWebhook } from "./webhooks.js";
 
-// Error classes
 export {
   MessagesError,
   AuthenticationError,
@@ -15,7 +12,6 @@ export {
   SignatureVerificationError,
 } from "./errors.js";
 
-// Resource types
 export type {
   Line,
   Chat,
@@ -31,7 +27,6 @@ export type {
   WebhookEvent,
 } from "./types.js";
 
-// Param types
 export type {
   ClientConfig,
   MessagesClient,
@@ -49,7 +44,6 @@ export type {
   CreateWebhookParams,
 } from "./types.js";
 
-// Pagination
 export type { PaginatedResponse } from "./pagination.js";
 
 // Schemas (for advanced use)
@@ -70,5 +64,4 @@ export {
   WebhookEventSchema,
 } from "./schemas.js";
 
-// Utility type
 export type { CamelCaseKeys } from "./util.js";
