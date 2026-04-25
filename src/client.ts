@@ -114,12 +114,13 @@ export function createClient(config: ClientConfig = {}): MessagesClient {
         filename,
         mimeType: "text/vcard",
       });
-      return client.sendMessage({
-        from: params.from,
-        to: params.to,
-        text: params.text,
-        attachments: [file.id],
-        replyTo: params.replyTo,
+      return http.request("POST", "/v1/contact-cards", {
+        body: {
+          from: params.from,
+          to: params.to,
+          vcard_file: file.id,
+        },
+        schema: OutboxItemSchema,
       });
     },
 
