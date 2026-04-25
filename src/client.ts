@@ -103,6 +103,10 @@ export function createClient(config: ClientConfig = {}): MessagesClient {
     },
 
     async sendContactCard(params: SendContactCardParams) {
+      // The receiving Messages.app auto-renders any attachment with
+      // `uti=public.vcard` / `mime_type=text/vcard` as a rich contact pill —
+      // no special endpoint or balloon-plugin metadata is needed. We just
+      // upload the .vcf and send it as a regular attachment.
       const vcard = await buildVCard(params);
       const filename =
         params.filename ??
@@ -114,13 +118,12 @@ export function createClient(config: ClientConfig = {}): MessagesClient {
         filename,
         mimeType: "text/vcard",
       });
-      return http.request("POST", "/v1/contact-cards", {
-        body: {
-          from: params.from,
-          to: params.to,
-          vcard_file: file.id,
-        },
-        schema: OutboxItemSchema,
+      return client.sendMessage({
+        from: params.from,
+        to: params.to,
+        text: params.text,
+        attachments: [file.id],
+        replyTo: params.replyTo,
       });
     },
 

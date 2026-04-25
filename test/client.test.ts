@@ -477,7 +477,7 @@ test("createWebhook sends correct request", async () => {
   expect(result.secret).toBe("whsec_123");
 });
 
-test("sendContactCard uploads vCard then posts to /v1/contact-cards", async () => {
+test("sendContactCard uploads vCard then sends as attachment", async () => {
   let uploadedBody: string | undefined;
   let uploadedFilename: string | undefined;
   let uploadedMime: string | undefined;
@@ -501,7 +501,7 @@ test("sendContactCard uploads vCard then posts to /v1/contact-cards", async () =
         { status: 201 },
       );
     }
-    if (path === "/v1/contact-cards") {
+    if (path === "/v1/messages") {
       sendBody = await req.json();
       return new Response(
         JSON.stringify({
@@ -519,6 +519,7 @@ test("sendContactCard uploads vCard then posts to /v1/contact-cards", async () =
   const result = await client.sendContactCard({
     from: "+15551234567",
     to: "+15559876543",
+    text: "Here's Jane's info:",
     firstName: "Jane",
     lastName: "Doe",
     phones: [
@@ -547,7 +548,8 @@ test("sendContactCard uploads vCard then posts to /v1/contact-cards", async () =
 
   expect(sendBody.from).toBe("+15551234567");
   expect(sendBody.to).toBe("+15559876543");
-  expect(sendBody.vcard_file).toBe("file_vcard123");
+  expect(sendBody.text).toBe("Here's Jane's info:");
+  expect(sendBody.attachments).toEqual(["file_vcard123"]);
 
   expect(result.id).toBe("obx_contact123");
   expect(result.status).toBe("pending");

@@ -91,6 +91,9 @@ export interface ContactAddress {
 export interface SendContactCardParams {
   from: string;
   to: string;
+  /** Optional message text sent alongside the card. */
+  text?: string;
+  replyTo?: string;
 
   firstName: string;
   lastName: string;
