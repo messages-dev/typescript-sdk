@@ -15,7 +15,7 @@ function pushField(lines: string[], name: string, value: string | undefined) {
   lines.push(`${name}:${escapeValue(value)}`);
 }
 
-function sniffImageType(
+export function sniffImageType(
   bytes: Uint8Array,
   hint?: "JPEG" | "PNG",
 ): "JPEG" | "PNG" {
@@ -35,36 +35,12 @@ function sniffImageType(
   return "JPEG";
 }
 
-async function encodePhoto(
-  photo: Blob | Buffer | Uint8Array | string,
-  photoType: "JPEG" | "PNG" | undefined,
-): Promise<{ type: "JPEG" | "PNG"; base64: string }> {
-  if (typeof photo === "string") {
-    return { type: photoType ?? "JPEG", base64: photo };
-  }
-
-  let bytes: Uint8Array;
-  let hint: "JPEG" | "PNG" | undefined = photoType;
-
-  if (typeof Blob !== "undefined" && photo instanceof Blob) {
-    const buf = await photo.arrayBuffer();
-    bytes = new Uint8Array(buf);
-    if (!hint) {
-      if (photo.type === "image/jpeg") hint = "JPEG";
-      else if (photo.type === "image/png") hint = "PNG";
-    }
-  } else {
-    bytes = photo as Uint8Array;
-  }
-
-  const type = sniffImageType(bytes, hint);
-  const base64 = Buffer.from(bytes).toString("base64");
-  return { type, base64 };
+export interface BuildVCardParams extends Omit<SendContactCardParams, "photo"> {
+  /** Pre-resolved photo bytes (fetched by the caller from the photo file ID). */
+  photoBytes?: Uint8Array;
 }
 
-export async function buildVCard(
-  params: SendContactCardParams,
-): Promise<string> {
+export function buildVCard(params: BuildVCardParams): string {
   const lines: string[] = ["BEGIN:VCARD", "VERSION:3.0"];
 
   const firstName = params.firstName;
@@ -108,8 +84,9 @@ export async function buildVCard(
   pushField(lines, "BDAY", params.bday);
   pushField(lines, "NOTE", params.note);
 
-  if (params.photo !== undefined) {
-    const { type, base64 } = await encodePhoto(params.photo, params.photoType);
+  if (params.photoBytes) {
+    const type = sniffImageType(params.photoBytes, params.photoType);
+    const base64 = Buffer.from(params.photoBytes).toString("base64");
     lines.push(`PHOTO;ENCODING=b;TYPE=${type}:${base64}`);
   }
 

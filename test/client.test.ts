@@ -592,16 +592,28 @@ test("sendContactCard escapes reserved characters in field values", async () => 
   expect(uploadedBody).toContain("NOTE:Hi\\; hello\\, world\\nline2");
 });
 
-test("sendContactCard encodes photo Blob as base64 with sniffed type", async () => {
+test("sendContactCard fetches photo file ID and embeds bytes in the vCard", async () => {
   let uploadedBody: string | undefined;
+  // PNG magic bytes + a few trailing bytes
+  const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const photoStorageUrl = "https://storage.example.com/photo.png";
 
   mockFetch(async (req) => {
-    const path = new URL(req.url).pathname;
-    if (path === "/v1/files") {
+    const url = new URL(req.url);
+    if (url.pathname === "/v1/files" && req.method === "GET" && url.searchParams.get("id") === "file_photo123") {
+      return new Response(null, {
+        status: 302,
+        headers: { Location: photoStorageUrl },
+      });
+    }
+    if (req.url === photoStorageUrl) {
+      return new Response(pngBytes, { status: 200 });
+    }
+    if (url.pathname === "/v1/files" && req.method === "POST") {
       uploadedBody = await req.text();
       return new Response(
         JSON.stringify({
-          id: "file_abc",
+          id: "file_vcf",
           url: "https://storage.example.com/x.vcf",
           filename: "x.vcf",
           mime_type: "text/vcard",
@@ -611,25 +623,43 @@ test("sendContactCard encodes photo Blob as base64 with sniffed type", async () 
         { status: 201 },
       );
     }
-    return new Response(
-      JSON.stringify({ id: "obx_1", status: "pending", request_id: "r" }),
-      { status: 201 },
-    );
+    if (url.pathname === "/v1/messages") {
+      return new Response(
+        JSON.stringify({ id: "obx_1", status: "pending", request_id: "r" }),
+        { status: 201 },
+      );
+    }
+    throw new Error(`unexpected path: ${url.pathname}`);
   });
 
-  // PNG magic bytes + a few trailing bytes
-  const pngBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
   const client = createClient({ apiKey: "sk_live_test" });
   await client.sendContactCard({
     from: "+15551234567",
     to: "+15559876543",
     firstName: "Jane",
     lastName: "Doe",
-    photo: new Blob([pngBytes], { type: "image/png" }),
+    photo: "file_photo123",
   });
 
   const expectedB64 = Buffer.from(pngBytes).toString("base64");
   expect(uploadedBody).toContain(`PHOTO;ENCODING=b;TYPE=PNG:${expectedB64}`);
+});
+
+test("sendContactCard rejects photo strings that aren't file IDs", async () => {
+  mockFetch(async () => {
+    throw new Error("should not hit the network");
+  });
+
+  const client = createClient({ apiKey: "sk_live_test" });
+  await expect(
+    client.sendContactCard({
+      from: "+15551234567",
+      to: "+15559876543",
+      firstName: "Jane",
+      lastName: "Doe",
+      photo: "/local/path/photo.jpg",
+    }),
+  ).rejects.toThrow(/Invalid photo/);
 });
 
 test("sendContactCard respects explicit filename override", async () => {
@@ -670,15 +700,13 @@ test("sendContactCard respects explicit filename override", async () => {
   expect(uploadedFilename).toBe("custom-name.vcf");
 });
 
-test("sendAudioMessage with a pre-uploaded file ID skips the upload", async () => {
+test("sendAudioMessage posts the file ID to /v1/audio-messages", async () => {
   let audioMessageBody: any;
-  let uploadCalls = 0;
 
   mockFetch(async (req) => {
     const path = new URL(req.url).pathname;
     if (path === "/v1/files") {
-      uploadCalls++;
-      throw new Error("should not upload when given a file ID");
+      throw new Error("should not upload — caller passes a file ID");
     }
     if (path === "/v1/audio-messages") {
       expect(req.method).toBe("POST");
@@ -703,109 +731,12 @@ test("sendAudioMessage with a pre-uploaded file ID skips the upload", async () =
     replyTo: "msg_abc",
   });
 
-  expect(uploadCalls).toBe(0);
   expect(audioMessageBody.from).toBe("+15551234567");
   expect(audioMessageBody.to).toBe("+15559876543");
   expect(audioMessageBody.audio_message).toBe("file_existing");
   expect(audioMessageBody.reply_to).toBe("msg_abc");
   expect(result.id).toBe("obx_audio123");
   expect(result.status).toBe("pending");
-});
-
-test("sendAudioMessage uploads raw bytes then sends", async () => {
-  let uploadedBody: ArrayBuffer | undefined;
-  let uploadedMime: string | undefined;
-  let uploadedFilename: string | undefined;
-  let audioMessageBody: any;
-
-  mockFetch(async (req) => {
-    const path = new URL(req.url).pathname;
-    if (path === "/v1/files") {
-      uploadedMime = req.headers.get("Content-Type") ?? undefined;
-      uploadedFilename = req.headers.get("X-Filename") ?? undefined;
-      uploadedBody = await req.arrayBuffer();
-      return new Response(
-        JSON.stringify({
-          id: "file_audio456",
-          url: "https://storage.example.com/clip.m4a",
-          filename: uploadedFilename,
-          mime_type: uploadedMime,
-          size: uploadedBody.byteLength,
-          request_id: "req_file",
-        }),
-        { status: 201 },
-      );
-    }
-    if (path === "/v1/audio-messages") {
-      audioMessageBody = await req.json();
-      return new Response(
-        JSON.stringify({
-          id: "obx_audio456",
-          status: "pending",
-          request_id: "req_audio",
-        }),
-        { status: 201 },
-      );
-    }
-    throw new Error(`unexpected path: ${path}`);
-  });
-
-  const audio = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
-  const client = createClient({ apiKey: "sk_live_test" });
-  const result = await client.sendAudioMessage({
-    from: "+15551234567",
-    to: "+15559876543",
-    audioMessage: audio,
-    mimeType: "audio/mp4",
-    filename: "hello.m4a",
-  });
-
-  expect(uploadedMime).toBe("audio/mp4");
-  expect(uploadedFilename).toBe("hello.m4a");
-  expect(new Uint8Array(uploadedBody!)).toEqual(audio);
-
-  expect(audioMessageBody.from).toBe("+15551234567");
-  expect(audioMessageBody.to).toBe("+15559876543");
-  expect(audioMessageBody.audio_message).toBe("file_audio456");
-  expect(audioMessageBody.reply_to).toBeUndefined();
-
-  expect(result.id).toBe("obx_audio456");
-});
-
-test("sendAudioMessage defaults mime type to audio/mpeg", async () => {
-  let uploadedMime: string | undefined;
-
-  mockFetch(async (req) => {
-    const path = new URL(req.url).pathname;
-    if (path === "/v1/files") {
-      uploadedMime = req.headers.get("Content-Type") ?? undefined;
-      await req.arrayBuffer();
-      return new Response(
-        JSON.stringify({
-          id: "file_a",
-          url: "https://storage.example.com/a",
-          filename: null,
-          mime_type: uploadedMime,
-          size: 0,
-          request_id: "r",
-        }),
-        { status: 201 },
-      );
-    }
-    return new Response(
-      JSON.stringify({ id: "obx_1", status: "pending", request_id: "r" }),
-      { status: 201 },
-    );
-  });
-
-  const client = createClient({ apiKey: "sk_live_test" });
-  await client.sendAudioMessage({
-    from: "+15551234567",
-    to: "+15559876543",
-    audioMessage: new Uint8Array([0]),
-  });
-
-  expect(uploadedMime).toBe("audio/mpeg");
 });
 
 test("sendAudioMessage rejects strings that aren't file IDs", async () => {

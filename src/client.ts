@@ -104,30 +104,16 @@ export function createClient(config: ClientConfig = {}): MessagesClient {
     },
 
     async sendAudioMessage(params: SendAudioMessageParams) {
-      // Accept either a pre-uploaded file ID or raw audio bytes. When given
-      // bytes we upload through the standard /v1/files path first, then send
-      // the resulting file ID — matching the sendContactCard flow.
-      let fileId: string;
-      if (typeof params.audioMessage === "string") {
-        if (!params.audioMessage.startsWith("file_")) {
-          throw new Error(
-            `Invalid audioMessage: expected a file ID like "file_…" or raw audio bytes (Blob, Buffer, Uint8Array).`,
-          );
-        }
-        fileId = params.audioMessage;
-      } else {
-        const file = await client.uploadFile({
-          file: params.audioMessage,
-          mimeType: params.mimeType ?? "audio/mpeg",
-          filename: params.filename,
-        });
-        fileId = file.id;
+      if (!params.audioMessage.startsWith("file_")) {
+        throw new Error(
+          `Invalid audioMessage: expected a file ID like "file_…". Upload audio first via client.uploadFile() or POST /v1/files.`,
+        );
       }
       return http.request("POST", "/v1/audio-messages", {
         body: {
           from: params.from,
           to: params.to,
-          audio_message: fileId,
+          audio_message: params.audioMessage,
           ...(params.replyTo ? { reply_to: params.replyTo } : {}),
         },
         schema: OutboxItemSchema,
@@ -137,9 +123,25 @@ export function createClient(config: ClientConfig = {}): MessagesClient {
     async sendContactCard(params: SendContactCardParams) {
       // The receiving Messages.app auto-renders any attachment with
       // `uti=public.vcard` / `mime_type=text/vcard` as a rich contact pill —
-      // no special endpoint or balloon-plugin metadata is needed. We just
-      // upload the .vcf and send it as a regular attachment.
-      const vcard = await buildVCard(params);
+      // no special endpoint or balloon-plugin metadata is needed. We build
+      // the .vcf, upload it, and send it as a regular attachment.
+      let photoBytes: Uint8Array | undefined;
+      if (params.photo) {
+        if (!params.photo.startsWith("file_")) {
+          throw new Error(
+            `Invalid photo: expected a file ID like "file_…". Upload the photo first via client.uploadFile() or POST /v1/files.`,
+          );
+        }
+        const photoUrl = await http.getRedirectUrl("/v1/files", {
+          query: { id: params.photo },
+        });
+        const res = await fetch(photoUrl);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch photo ${params.photo}: ${res.status}`);
+        }
+        photoBytes = new Uint8Array(await res.arrayBuffer());
+      }
+      const vcard = buildVCard({ ...params, photoBytes });
       const filename =
         params.filename ??
         `${params.firstName}-${params.lastName}.vcf`

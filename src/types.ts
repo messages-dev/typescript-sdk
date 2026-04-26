@@ -91,15 +91,8 @@ export interface ContactAddress {
 export interface SendAudioMessageParams {
   from: string;
   to: string;
-  /**
-   * Pre-uploaded file ID (`file_…`) OR raw audio bytes. When bytes are
-   * passed the SDK uploads via `POST /v1/files` first.
-   */
-  audioMessage: string | Blob | Buffer | Uint8Array;
-  /** Mime type when passing raw bytes. Default: `audio/mpeg`. */
-  mimeType?: string;
-  /** Filename when passing raw bytes. */
-  filename?: string;
+  /** File ID (`file_…`) of an audio file uploaded via `POST /v1/files`. */
+  audioMessage: string;
   /** Message ID or raw GUID to reply to. */
   replyTo?: string;
 }
@@ -122,9 +115,9 @@ export interface SendContactCardParams {
   /** ISO date, YYYY-MM-DD. */
   bday?: string;
   note?: string;
-  /** Contact photo. Base64 strings are passed through as-is; Blob/Buffer/Uint8Array are encoded automatically. */
-  photo?: Blob | Buffer | Uint8Array | string;
-  /** Override the photo mime type. Auto-detected from bytes or Blob.type when omitted. */
+  /** File ID (`file_…`) of a photo uploaded via `POST /v1/files`. The SDK downloads it and embeds it inline in the vCard. */
+  photo?: string;
+  /** Override the photo mime type. Auto-detected from the file's bytes when omitted. */
   photoType?: "JPEG" | "PNG";
 
   /** Filename for the uploaded .vcf. Default: "<first>-<last>.vcf". */
