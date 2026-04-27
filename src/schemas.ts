@@ -24,6 +24,8 @@ export const AttachmentSchema = z.object({
   mime_type: z.string().nullish(),
   size: z.number().nullish(),
   url: z.string().nullish(),
+  /** Auto-generated transcription text for audio messages (voice memos). */
+  transcription: z.string().nullish(),
 });
 
 export const FileSchema = z.object({
@@ -45,6 +47,8 @@ export const MessageSchema = z.object({
   attachments: z.array(AttachmentSchema),
   service: z.string().nullish(),
   is_from_me: z.boolean(),
+  /** True when the message is a tap-to-record voice memo (vs. a generic audio attachment). */
+  is_audio_message: z.boolean().nullish(),
   sent_at: z.number(),
   synced_at: z.number(),
   outbox_id: z.string().nullish(),
