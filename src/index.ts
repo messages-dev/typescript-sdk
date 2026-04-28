@@ -1,6 +1,6 @@
 export { createClient } from "./client.js";
 
-export { verifyWebhook } from "./webhooks.js";
+export { verifyWebhook, signWebhook, buildWebhookDelivery } from "./webhooks.js";
 
 export {
   MessagesError,
@@ -25,6 +25,14 @@ export type {
   Webhook,
   DeletedResponse,
   WebhookEvent,
+  WebhookEventName,
+  WebhookEventDataFor,
+  MessageEventData,
+  ReactionEventData,
+  MessageReceivedEvent,
+  MessageSentEvent,
+  ReactionAddedEvent,
+  ReactionRemovedEvent,
 } from "./types.js";
 
 export type {
@@ -66,6 +74,13 @@ export {
   ErrorResponseSchema,
   DeletedResponseSchema,
   WebhookEventSchema,
+  MessageEventDataSchema,
+  ReactionEventDataSchema,
+  MessageReceivedEventSchema,
+  MessageSentEventSchema,
+  ReactionAddedEventSchema,
+  ReactionRemovedEventSchema,
+  WEBHOOK_EVENT_NAMES,
 } from "./schemas.js";
 
 export type { CamelCaseKeys } from "./util.js";

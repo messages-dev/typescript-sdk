@@ -124,9 +124,61 @@ export const DeletedResponseSchema = z.object({
   request_id: z.string(),
 });
 
-export const WebhookEventSchema = z.object({
-  event: z.string(),
-  data: z.record(z.unknown()),
+// ── Webhook event payloads ──────────────────────────────────────────
+//
+// Each event's `data` extends the matching resource schema with the fields
+// the delivery pipeline injects: `line_handle` (the receiving line's phone
+// number / Apple ID, on every event) and `chat_id` (on reactions, since the
+// reactions table itself only references the parent message).
+
+export const MessageEventDataSchema = MessageSchema.extend({
+  line_handle: z.string(),
+});
+
+export const ReactionEventDataSchema = ReactionSchema.extend({
+  chat_id: z.string(),
+  line_handle: z.string(),
+});
+
+const baseEnvelope = {
   timestamp: z.number(),
   delivery_id: z.string().optional(),
+};
+
+export const MessageReceivedEventSchema = z.object({
+  event: z.literal("message.received"),
+  data: MessageEventDataSchema,
+  ...baseEnvelope,
 });
+
+export const MessageSentEventSchema = z.object({
+  event: z.literal("message.sent"),
+  data: MessageEventDataSchema,
+  ...baseEnvelope,
+});
+
+export const ReactionAddedEventSchema = z.object({
+  event: z.literal("reaction.added"),
+  data: ReactionEventDataSchema,
+  ...baseEnvelope,
+});
+
+export const ReactionRemovedEventSchema = z.object({
+  event: z.literal("reaction.removed"),
+  data: ReactionEventDataSchema,
+  ...baseEnvelope,
+});
+
+export const WebhookEventSchema = z.discriminatedUnion("event", [
+  MessageReceivedEventSchema,
+  MessageSentEventSchema,
+  ReactionAddedEventSchema,
+  ReactionRemovedEventSchema,
+]);
+
+export const WEBHOOK_EVENT_NAMES = [
+  "message.received",
+  "message.sent",
+  "reaction.added",
+  "reaction.removed",
+] as const;

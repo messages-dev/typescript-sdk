@@ -12,6 +12,13 @@ import type {
   WebhookSchema,
   DeletedResponseSchema,
   WebhookEventSchema,
+  MessageReceivedEventSchema,
+  MessageSentEventSchema,
+  ReactionAddedEventSchema,
+  ReactionRemovedEventSchema,
+  MessageEventDataSchema,
+  ReactionEventDataSchema,
+  WEBHOOK_EVENT_NAMES,
 } from "./schemas.js";
 import type { CamelCaseKeys } from "./util.js";
 import type { PaginatedResponse } from "./pagination.js";
@@ -29,7 +36,32 @@ export type TypingIndicator = CamelCaseKeys<z.infer<typeof TypingIndicatorSchema
 export type ReadReceipt = CamelCaseKeys<z.infer<typeof ReadReceiptSchema>>;
 export type Webhook = CamelCaseKeys<z.infer<typeof WebhookSchema>>;
 export type DeletedResponse = CamelCaseKeys<z.infer<typeof DeletedResponseSchema>>;
+
+// ── Webhook event types ─────────────────────────────────────────────
+//
+// `WebhookEvent` is a discriminated union keyed off `.event`. `verifyWebhook`
+// returns this type, so consumers can `switch (event.event)` and TypeScript
+// narrows `event.data` to the right per-event shape.
+
+export type MessageEventData = CamelCaseKeys<z.infer<typeof MessageEventDataSchema>>;
+export type ReactionEventData = CamelCaseKeys<z.infer<typeof ReactionEventDataSchema>>;
+
+export type MessageReceivedEvent = CamelCaseKeys<z.infer<typeof MessageReceivedEventSchema>>;
+export type MessageSentEvent = CamelCaseKeys<z.infer<typeof MessageSentEventSchema>>;
+export type ReactionAddedEvent = CamelCaseKeys<z.infer<typeof ReactionAddedEventSchema>>;
+export type ReactionRemovedEvent = CamelCaseKeys<z.infer<typeof ReactionRemovedEventSchema>>;
+
 export type WebhookEvent = CamelCaseKeys<z.infer<typeof WebhookEventSchema>>;
+
+export type WebhookEventName = (typeof WEBHOOK_EVENT_NAMES)[number];
+
+/** Maps an event name to its `data` payload type — used by buildWebhookDelivery. */
+export type WebhookEventDataFor<E extends WebhookEventName> =
+  E extends "message.received" ? MessageEventData
+  : E extends "message.sent" ? MessageEventData
+  : E extends "reaction.added" ? ReactionEventData
+  : E extends "reaction.removed" ? ReactionEventData
+  : never;
 
 // ── Param types ─────────────────────────────────────────────────────
 
