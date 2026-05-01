@@ -93,7 +93,7 @@ export const ReadReceiptSchema = z.object({
 
 export const WebhookSchema = z.object({
   id: z.string(),
-  line_id: z.string(),
+  line_ids: z.array(z.string()),
   url: z.string(),
   events: z.array(z.string()),
   is_active: z.boolean(),
